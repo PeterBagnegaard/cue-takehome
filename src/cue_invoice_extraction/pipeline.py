@@ -28,6 +28,7 @@ from .schemas import (
     PipelineSummary,
     SuccessRecord,
 )
+from .validation import validate_extraction
 
 
 @dataclass(frozen=True)
@@ -106,18 +107,26 @@ def process_invoice(
 
     try:
         extraction = normalize_and_score(llm_result, config)
+        validation = validate_extraction(extraction)
         doc_confidence = document_confidence(extraction, config.confidence)
     except Exception as exc:
         raise StepFailure(
             step="normalization",
             reason=str(exc),
-            attempted=["normalized_fields", "computed_field_confidence", "computed_document_confidence"],
+            attempted=[
+                "normalized_fields",
+                "computed_field_confidence",
+                "validated_extraction",
+                "computed_document_confidence",
+            ],
         ) from exc
 
     warnings = list(llm_result.notes)
     return SuccessRecord(
         filename=pdf_path.name,
         extraction=extraction,
+        validated=validation.validated,
+        validation_failure_reason=validation.validation_failure_reason,
         document_confidence=doc_confidence,
         warnings=warnings,
     )
@@ -245,5 +254,6 @@ def make_error_record(
     return ErrorRecord(
         filename=pdf_path.name,
         error=ErrorDetails(step=step, reason=reason, attempted=attempted),
+        validation_failure_reason=f"Document failed before extraction validation at step {step}: {reason}",
         warnings=["Document failed before successful extraction output."],
     )

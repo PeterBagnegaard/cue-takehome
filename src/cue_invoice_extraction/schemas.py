@@ -58,6 +58,8 @@ class SuccessRecord(BaseModel):
     filename: str
     status: Literal["success"] = "success"
     extraction: NormalizedInvoice
+    validated: bool
+    validation_failure_reason: str = ""
     document_confidence: float
     warnings: list[str] = Field(default_factory=list)
 
@@ -73,6 +75,8 @@ class ErrorRecord(BaseModel):
     status: Literal["error"] = "error"
     error: ErrorDetails
     extraction: None = None
+    validated: bool = False
+    validation_failure_reason: str = "Document failed before extraction validation."
     document_confidence: float = 0.0
     warnings: list[str] = Field(default_factory=list)
 

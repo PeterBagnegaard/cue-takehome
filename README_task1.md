@@ -44,7 +44,7 @@ The extraction logic does not hardcode the model. The default is `openai:gpt-4o`
 
 ## Output Format
 
-Each matching PDF writes exactly one JSONL record. Successful records include `filename`, `status`, normalized field values, per-field confidence, document confidence, and warnings. Unknowns are represented as `null`, not empty strings.
+Each matching PDF writes exactly one JSONL record. Successful records include `filename`, `status`, normalized field values, validation result, per-field confidence, document confidence, and warnings. Unknowns are represented as `null`, not empty strings.
 
 Failed documents produce an error record with:
 
@@ -54,8 +54,15 @@ Failed documents produce an error record with:
 - `error.reason`
 - `error.attempted`
 - `extraction: null`
+- `validated: false`
+- `validation_failure_reason`
 - `document_confidence: 0.0`
 - warnings
+
+Successful extraction records also include:
+
+- `validated`: whether deterministic validation passed
+- `validation_failure_reason`: empty when validation passed, otherwise a semicolon-separated reason string
 
 ## Approach
 
@@ -65,10 +72,22 @@ The main extraction path is multimodal:
 2. Send page image bytes to a configured OpenAI model through `pydantic-ai`.
 3. Validate the model response against a strict Pydantic schema.
 4. Normalize dates, amounts, currencies, identifiers, supplier names, and placeholders in deterministic Python.
-5. Compute deterministic final confidence per field.
-6. Write one JSONL record per PDF and continue on document-level failures.
+5. Run deterministic extraction validation without an LLM.
+6. Compute deterministic final confidence per field.
+7. Write one JSONL record per PDF and continue on document-level failures.
 
 No text-first extractor is used as the main path.
+
+## Validation
+
+The validator lives in `validation.py` and is separate from the LLM extraction layer. It checks:
+
+- amount parses to a positive decimal
+- currency is one of `DKK`, `EUR`, `USD`
+- invoice and due dates parse as ISO dates
+- due date is on or after invoice date
+- invoice ID is non-empty and invoice-like
+- PO/reference may be `null`
 
 ## Confidence
 
@@ -98,7 +117,7 @@ Run deterministic tests:
 pytest
 ```
 
-Tests cover amount, date, currency, unknown placeholder normalization, and explicit vs inferred currency confidence.
+Tests cover amount, date, currency, unknown placeholder normalization, explicit vs inferred currency confidence, and deterministic extraction validation rules.
 
 ## Known Limitations
 
