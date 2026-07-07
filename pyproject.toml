@@ -1,0 +1,29 @@
+[build-system]
+requires = ["setuptools>=70", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "cue-invoice-extraction"
+version = "0.1.0"
+description = "Task 1 multimodal invoice extraction pipeline for the Cue AI Engineer take-home."
+readme = "README_task1.md"
+requires-python = ">=3.11"
+dependencies = [
+  "pydantic>=2.8",
+  "pydantic-ai>=1.0.0",
+  "pypdfium2>=4.30.0",
+  "PyYAML>=6.0.0",
+  "Pillow>=10.0.0",
+]
+
+[project.optional-dependencies]
+dev = [
+  "pytest>=8.0",
+]
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.pytest.ini_options]
+pythonpath = ["src"]
+testpaths = ["tests"]

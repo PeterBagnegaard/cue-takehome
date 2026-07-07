@@ -1,0 +1,32 @@
+input:
+  path: "takehome/pdf_invoices"
+  glob: "invoice_*.pdf"
+
+output:
+  jsonl_path: "outputs/extractions.jsonl"
+  overwrite: true
+
+llm:
+  provider: "openai"
+  model: "gpt-4o"
+  temperature: 0
+  max_retries: 2
+  timeout_seconds: 120
+
+pdf:
+  render_dpi: 180
+  max_pages: 5
+  image_format: "png"
+  keep_rendered_images: false
+  rendered_images_dir: "outputs/rendered_pages"
+
+normalization:
+  default_currency: "DKK"
+  infer_missing_currency: true
+
+confidence:
+  auto_unknown_threshold: 0.25
+  document_confidence_method: "mean_required_fields"
+
+runtime:
+  continue_on_error: true
